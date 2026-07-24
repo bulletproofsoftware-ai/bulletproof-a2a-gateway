@@ -1,0 +1,126 @@
+# A2A Gateway — Agent Capabilities Registry (PRD-17 REQ-A2A-002)
+#
+# 15 conductor agents exposed via the A2A protocol. Each entry declares
+# trust_level (standard | elevated) and externally_callable (true | false).
+# All 15 below are externally_callable: true; this list is the explicit
+# allowlist — agents NOT in this file are NOT reachable from outside.
+#
+# trust_level semantics:
+#   standard          — invocable by any caller with a valid API key
+#   elevated          — invocable only by callers whose API key is registered
+#                       with elevated trust (X-Trust-Level: elevated header
+#                       required; mismatch returns 403)
+#
+# allowed_tools: tools the agent is permitted to call when invoked through
+#   the gateway. Subset of the agent's normal local-mode tool surface, since
+#   gateway-mode runs the agent without operator supervision.
+
+version: "1.0.0"
+schema: "https://example.com/schemas/a2a-capabilities-v1.json"
+gateway_port: 8420
+
+agents:
+  - agent_id: conductor-architect
+    description: Designs system architecture, component boundaries, data flows, and integration patterns. Produces architecture decision records and diagrams.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Glob, Grep, Bash]
+    max_tokens: 32768
+
+  - agent_id: conductor-builder
+    description: Implements code from architecture specs. Writes production-quality code with error handling, tests, and documentation.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Write, Edit, Bash, Glob, Grep]
+    max_tokens: 32768
+
+  - agent_id: conductor-qa
+    description: Reviews implementation against specs. Runs tests, validates edge cases, checks error handling, and verifies completeness.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Bash, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-code-reviewer
+    description: Performs deep code review for quality, security, performance, and maintainability. Identifies bugs, anti-patterns, and improvement opportunities.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-doc-gen
+    description: Generates documentation from code — API docs, READMEs, architecture guides, runbooks, and inline documentation.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Write, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-bug-find
+    description: Hunts for bugs through static analysis, pattern matching, and logical reasoning. Identifies race conditions, memory leaks, null dereferences, and logic errors.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Glob, Grep, Bash]
+    max_tokens: 16384
+
+  - agent_id: conductor-refactor
+    description: Refactors code for improved readability, maintainability, and performance while preserving behavior. Applies design patterns and reduces complexity.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Write, Edit, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-research
+    description: Researches technical topics, evaluates libraries/frameworks, compares approaches, and produces actionable recommendations with evidence.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Bash, Glob, Grep]
+    max_tokens: 32768
+
+  - agent_id: conductor-database
+    description: Designs database schemas, writes migrations, optimizes queries, and reviews data models for correctness and performance.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Write, Bash, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-devops
+    description: Manages infrastructure-as-code, CI/CD pipelines, Docker configurations, deployment scripts, and monitoring setup.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Write, Edit, Bash, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-api-design
+    description: Designs RESTful and GraphQL APIs with proper resource modeling, versioning, error handling, and OpenAPI specifications.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Write, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-api-docs
+    description: Generates comprehensive API documentation including endpoint references, request/response examples, authentication guides, and SDK usage.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Write, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-compliance
+    description: Audits code and infrastructure for regulatory compliance (SOC2, GDPR, HIPAA, PCI-DSS). Identifies gaps and recommends remediations.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Glob, Grep, Bash]
+    max_tokens: 16384
+
+  - agent_id: conductor-performance
+    description: Profiles and optimizes application performance. Identifies bottlenecks, recommends caching strategies, and tunes resource utilization.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Bash, Glob, Grep]
+    max_tokens: 16384
+
+  - agent_id: conductor-observability
+    description: Designs and implements observability — structured logging, distributed tracing, metrics collection, alerting rules, and dashboards.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read, Write, Edit, Bash, Glob, Grep]
+    max_tokens: 16384
