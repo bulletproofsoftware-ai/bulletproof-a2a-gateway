@@ -1,0 +1,1097 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "codehardener-ruff",
+          "version": "0.1.0",
+          "rules": [
+            {
+              "id": "RUFF-F401",
+              "name": "Ruff F401: `fastapi.status` imported but unused",
+              "shortDescription": {
+                "text": "`fastapi.status` imported but unused"
+              },
+              "properties": {
+                "tags": [
+                  "medium"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "RUFF-F401",
+          "level": "warning",
+          "message": {
+            "text": "`fastapi.status` imported but unused"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/adapters/mcp_bridge.py"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 65
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Auto-fix available: Remove unused import: `fastapi.status` (applicability: safe)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RUFF-F401",
+          "level": "warning",
+          "message": {
+            "text": "`fastapi.Depends` imported but unused"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/auth.py"
+                },
+                "region": {
+                  "startLine": 6,
+                  "startColumn": 21
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Auto-fix available: Remove unused import: `fastapi.Depends` (applicability: safe)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RUFF-F401",
+          "level": "warning",
+          "message": {
+            "text": "`typing.Any` imported but unused"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main.py"
+                },
+                "region": {
+                  "startLine": 12,
+                  "startColumn": 20
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Auto-fix available: Remove unused import: `typing.Any` (applicability: safe)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RUFF-F401",
+          "level": "warning",
+          "message": {
+            "text": "`fastapi.Request` imported but unused"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/main.py"
+                },
+                "region": {
+                  "startLine": 206,
+                  "startColumn": 40
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Auto-fix available: Remove unused import: `fastapi.Request` (applicability: safe)"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "RUFF-F401",
+          "level": "warning",
+          "message": {
+            "text": "`asyncio` imported but unused"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/adapters/mcp_bridge.py"
+                },
+                "region": {
+                  "startLine": 19,
+                  "startColumn": 8
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Auto-fix available: Remove unused import: `asyncio` (applicability: safe)"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "codehardener-syft",
+          "version": "0.1.0",
+          "rules": [
+            {
+              "id": "SBOM-LICENSE-UNKNOWN",
+              "name": "Unknown License: jinja2@3.1.5",
+              "shortDescription": {
+                "text": "Package jinja2 has no license information. This may indicate a compliance risk."
+              },
+              "properties": {
+                "tags": [
+                  "low",
+                  "A08:2021-Software and Data Integrity Failures"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/.github/workflows/ci.yml"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/.github/workflows/ci.yml"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "SBOM-LICENSE-UNKNOWN",
+          "level": "note",
+          "message": {
+            "text": "Code or data can be modified without detection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/requirements.txt"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Verify the license for this package before using in production."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "codehardener-trivy",
+          "version": "0.1.0",
+          "rules": [
+            {
+              "id": "LICENSE-Apache-2.0",
+              "name": "License Compliance: Apache-2.0 in ",
+              "shortDescription": {
+                "text": "Package  uses license Apache-2.0 (category: notice). Review for compliance with your organization's license policy."
+              },
+              "properties": {
+                "tags": [
+                  "low",
+                  "A06:2021-Vulnerable and Outdated Components"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "LICENSE-Apache-2.0",
+          "level": "note",
+          "message": {
+            "text": "Using outdated libraries with known security issues."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "LICENSE"
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Review this finding and apply the appropriate fix based on the description: Package  uses license Apache-2.0 (category: notice). Review for compliance with your organization's license policy."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "codehardener-typos",
+          "version": "0.1.0",
+          "rules": [
+            {
+              "id": "TYPOS-SPELLING",
+              "name": "Typo: \"MAPE\" should be \"MAP\"",
+              "shortDescription": {
+                "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+              },
+              "properties": {
+                "tags": [
+                  "info"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 212
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 224
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"SELEC\" in typo. Suggested correction: SELECT."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "tests/test_cost_ingest_integration.py"
+                },
+                "region": {
+                  "startLine": 33
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"SELEC\" with \"SELECT\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/db.py"
+                },
+                "region": {
+                  "startLine": 77
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/reports.py"
+                },
+                "region": {
+                  "startLine": 28
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 202
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/main.py"
+                },
+                "region": {
+                  "startLine": 203
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "README.md"
+                },
+                "region": {
+                  "startLine": 16
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/config.py"
+                },
+                "region": {
+                  "startLine": 24
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "README.md"
+                },
+                "region": {
+                  "startLine": 50
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 46
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 46
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 114
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 115
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 116
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/templates/dashboard.html"
+                },
+                "region": {
+                  "startLine": 117
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 8
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 192
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 205
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 206
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 209
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"mape\" in typo. Suggested correction: map."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 211
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"mape\" with \"map\"."
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "TYPOS-SPELLING",
+          "level": "none",
+          "message": {
+            "text": "Found typo \"MAPE\" in typo. Suggested correction: MAP."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "app/collectors/prediction.py"
+                },
+                "region": {
+                  "startLine": 211
+                }
+              }
+            }
+          ],
+          "fixes": [
+            {
+              "description": {
+                "text": "Replace \"MAPE\" with \"MAP\"."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tool": {
+        "driver": {
+          "name": "codehardener-oxlint",
+          "version": "0.1.0",
+          "rules": []
+        }
+      },
+      "invocations": [
+        {
+          "executionSuccessful": false,
+          "toolExecutionNotifications": [
+            {
+              "descriptor": {
+                "id": "scanner.skipped"
+              },
+              "level": "note",
+              "message": {
+                "text": "Scanner skipped: no_matching_files \u2014 No .js/.ts files found \u2014 Oxlint requires a JavaScript/TypeScript project"
+              },
+              "properties": {
+                "skipReason": "no_matching_files",
+                "skipHint": "No .js/.ts files found \u2014 Oxlint requires a JavaScript/TypeScript project"
+              }
+            }
+          ]
+        }
+      ],
+      "results": []
+    }
+  ]
+}
