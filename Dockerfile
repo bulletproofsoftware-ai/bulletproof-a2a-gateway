@@ -12,6 +12,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ src/
 COPY registry/ registry/
 
+# Run as a non-root user (CIS Docker Benchmark DS-0002 / opengrep missing-user).
+# python:3.11-slim does not ship a non-root user, so create one.
+RUN useradd --create-home --uid 10001 appuser \
+    && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8420
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
