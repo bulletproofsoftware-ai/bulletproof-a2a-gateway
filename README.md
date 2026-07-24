@@ -2,6 +2,11 @@
 
 **An agent-to-agent gateway: authenticated, rate-limited, audited invocation between agents.**
 
+![bulletproof-a2a-gateway — overview](docs/media/infographic.png)
+
+> 📚 **Docs:** [`docs/`](docs/) (overview, install, how-to-use, administrator, SBOM, security scan).
+> 🎬 **Media:** slide deck, explainer video, and briefing doc in [`media/`](media/).
+
 `bulletproof-a2a-gateway` is a FastAPI service that lets agents (and external callers)
 invoke other agents' capabilities safely. It authenticates callers, enforces
 per-caller rate limits, audits every invocation, and bridges to MCP so an agent's
