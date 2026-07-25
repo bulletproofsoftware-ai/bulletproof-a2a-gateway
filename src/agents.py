@@ -1,7 +1,8 @@
-"""Agent registry loaded from registry/capabilities.yaml (PRD-17 REQ-A2A-002).
+"""Agent registry loaded from registry/capabilities.yaml.
 
 YAML is the source of truth — adding/removing an agent means editing the YAML
-and bouncing the gateway, NOT editing this file.
+and bouncing the gateway, NOT editing this file. Point A2A_REGISTRY_PATH at a
+different file to load your own registry.
 """
 
 from __future__ import annotations

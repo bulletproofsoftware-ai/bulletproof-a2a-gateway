@@ -1,0 +1,25 @@
+# Registry used by the test suite only.
+version: "1.0.0"
+gateway_port: 8100
+
+agents:
+  - agent_id: test-standard
+    description: A standard-trust test agent.
+    externally_callable: true
+    trust_level: standard
+    allowed_tools: [Read]
+    max_tokens: 1024
+
+  - agent_id: test-elevated
+    description: An elevated-trust test agent.
+    externally_callable: true
+    trust_level: elevated
+    allowed_tools: [Read, Write]
+    max_tokens: 2048
+
+  - agent_id: test-hidden
+    description: Not externally callable; must never appear in discovery.
+    externally_callable: false
+    trust_level: standard
+    allowed_tools: []
+    max_tokens: 512

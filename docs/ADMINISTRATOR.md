@@ -11,11 +11,13 @@ into the process environment (see [INSTALL.md](INSTALL.md)).
 |----------|---------|---------|---------|
 | `API_KEYS` | *(empty)* | `src/auth.py` | **Required.** Comma-separated API keys callers present via `X-API-Key`. With none set, every authenticated route returns `500 No API keys configured on server`. |
 | `HOST` | `0.0.0.0` | `.env.example` | Bind address (pass to `uvicorn --host`). |
-| `PORT` | `8100` (`.env`) / `8420` (Docker) | `.env.example`, `uvicorn` | Listen port. See the port-mismatch note below. |
-| `RATE_LIMIT_RPM` | `60` | `.env.example` | Intended per-key rate limit. **Note:** the limiter in `src/rate_limiter.py` is currently hard-coded to `max_requests=60, window_seconds=60` and does **not** read this env var (see known gaps). |
-| `AUDIT_DB_PATH` | `./data/audit.db` | `.env.example` | Intended audit DB path. **Note:** the current audit implementation emits HTTP events to an event-router and does not write this DB (see known gaps). |
+| `PORT` | `8100` | `.env.example`, `uvicorn` | Listen port. The Dockerfile exposes and serves on the same port. |
+| `RATE_LIMIT_RPM` | `60` | `src/rate_limiter.py` | Per-caller requests per minute. Read at import; restart to change. Non-numeric or `< 1` values log a warning and fall back to 60. |
 | `A2A_REGISTRY_PATH` | `registry/capabilities.yaml` | `src/agents.py` | Override the agent registry file location. |
-| `A2A_AUDIT_EVENT_ROUTER_URL` | `http://host.docker.internal:8085/events` | `src/audit.py` | Where audit events are POSTed. |
+| `A2A_INVOKER_EXECUTOR` | `subprocess` | `src/invoker.py` | Which executor runs an agent: `subprocess` or `echo`. |
+| `A2A_INVOKER_TEMPLATE` | *(empty)* | `src/invoker.py` | **Required for `subprocess`.** The command line that runs an agent. See [Agent execution model](#agent-execution-model). |
+| `A2A_INVOKER_TIMEOUT_S` | `300` | `src/invoker.py` | Seconds before an invocation is killed. Invalid values fall back to 300. |
+| `A2A_AUDIT_EVENT_ROUTER_URL` | `http://localhost:8085/events` | `src/audit.py` | Where audit events are POSTed. |
 | `A2A_AUDIT_TIMEOUT_S` | `1.5` | `src/audit.py` | Audit HTTP timeout (seconds). Best-effort; failures never block invokes. |
 
 ### Generating API keys
@@ -38,27 +40,32 @@ Each agent entry supports:
 
 | Key | Type | Default | Meaning |
 |-----|------|---------|---------|
-| `agent_id` | string | — | The conductor agent id (e.g. `conductor-qa`). The invoker strips a leading `conductor-` and calls `claude --agent conductor:<name>`. |
+| `agent_id` | string | — | The identifier callers use. Substituted into `{agent_id}` in the invoker template. |
 | `description` | string | — | Human-readable; surfaced in discovery + MCP `tools/list`. |
 | `externally_callable` | bool | `true` | If `false`, the agent is **skipped** at load and is unreachable. This is the outside-world allowlist. |
-| `trust_level` | `standard`\|`elevated` | `standard` | `elevated` requires `X-Trust-Level: elevated` (enforced on the MCP path; see gaps for REST). |
-| `allowed_tools` | list | `[]` | Tools the agent may use in gateway mode (a subset of its local surface). |
-| `max_tokens` | int | `16384` | Token budget surfaced in discovery/MCP annotations. |
+| `trust_level` | `standard`\|`elevated` | `standard` | `elevated` additionally requires `X-Trust-Level: elevated`. |
+| `allowed_tools` | list | `[]` | Advisory metadata published in discovery. **Not enforced by the gateway** — enforcement belongs to your agent runtime. |
+| `max_tokens` | int | `16384` | Advisory budget surfaced in discovery/MCP annotations. |
 
-The shipped registry declares **15** agents, all `externally_callable: true`. Six are
-`elevated`: `conductor-architect`, `conductor-builder`, `conductor-refactor`,
-`conductor-database`, `conductor-devops`, `conductor-compliance`.
+The shipped `registry/capabilities.yaml` contains **three example entries** to be replaced with
+your own agents. A larger real-world registry (15 agents for the Claude Code conductor plugin
+suite) ships as [`examples/capabilities.conductor.yaml`](../examples/capabilities.conductor.yaml)
+and is not loaded unless you point `A2A_REGISTRY_PATH` at it.
 
 ## Trust levels
 
 - **standard** — invocable by any caller with a valid `X-API-Key`.
-- **elevated** — additionally requires `X-Trust-Level: elevated`. The **MCP bridge enforces
-  this** (returns JSON-RPC `-32603` on mismatch). See the REST gap below.
+- **elevated** — additionally requires `X-Trust-Level: elevated`.
+
+Enforced on **both** paths: REST returns `403`, MCP returns JSON-RPC `-32603`. Put any agent
+that writes files or mutates state behind `elevated`. Because the header is caller-supplied,
+treat it as separating deliberate from accidental elevated use, not as authorization — pair it
+with network restrictions.
 
 ## Rate limiting
 
-`src/rate_limiter.py` is an in-memory sliding-window limiter keyed by `caller_id`
-(60 requests / 60 s). Because state is in-process:
+`src/rate_limiter.py` is an in-memory sliding-window limiter keyed by `caller_id`, sized by
+`RATE_LIMIT_RPM` requests per 60 s. Because state is in-process:
 
 - Limits are **per replica**, not global. Behind a load balancer, effective limits scale with
   replica count.
@@ -68,22 +75,47 @@ The shipped registry declares **15** agents, all `externally_callable: true`. Si
 
 ## Audit / observability
 
-Audit events go to an external **event-router** (`A2A_AUDIT_EVENT_ROUTER_URL`). Emission is
-best-effort with a 1.5 s timeout; failures are logged at WARNING and never affect invocations.
-If you run the SOC/governance stack, point this at its ingest endpoint; otherwise audit events
-are effectively dropped (with warnings in the gateway log).
+Audit events are POSTed to `A2A_AUDIT_EVENT_ROUTER_URL`. Any HTTP endpoint that accepts a JSON
+body works; [bulletproof-event-router](https://github.com/bulletproofsoftware-ai/bulletproof-event-router)
+is one such sink. Emission is best-effort with a 1.5 s timeout; failures are logged at WARNING
+and never affect invocations. With no sink reachable, audit events are effectively dropped
+(with warnings in the gateway log).
+
+Events carry the caller id, agent id, job id, trust level, and prompt *length* — not prompt
+content.
 
 Application logs go to stdout at INFO (`logging.basicConfig` in `src/main.py`).
 
 ## Agent execution model
 
-Invocation shells out to the local `claude` CLI as an async subprocess with a **300 s** timeout
-(`src/invoker.py`). Operational implications:
+The gateway is agent-runtime agnostic. An **executor** turns a request into an invocation,
+selected with `A2A_INVOKER_EXECUTOR`:
 
-- The **`claude` CLI must be installed and on `PATH`** in the gateway's runtime environment,
-  with access to the `conductor:*` agents. The Docker image does **not** include it.
+- **`subprocess`** (default) — renders `A2A_INVOKER_TEMPLATE` and runs it as an async
+  subprocess with an `A2A_INVOKER_TIMEOUT_S` (default 300 s) timeout.
+- **`echo`** — returns the rendered prompt without executing anything. Use it to smoke-test
+  auth, rate limiting, discovery, and the MCP bridge before an agent runtime exists.
+
+`A2A_INVOKER_TEMPLATE` is a command line containing any of `{agent_id}`, `{prompt}`, and
+`{context}`:
+
+```bash
+A2A_INVOKER_TEMPLATE='my-agent-cli --name {agent_id} --prompt {prompt}'
+```
+
+The template is tokenised with `shlex.split` **before** substitution and executed via
+`create_subprocess_exec`, never through a shell — a prompt cannot inject extra arguments.
+Omitting `{prompt}` writes the prompt to the command's stdin instead.
+
+See [`examples/README.md`](../examples/README.md) for worked configurations, including the
+Claude Code conductor agents and how to register a custom executor in Python.
+
+Operational implications:
+
+- Whatever binary your template names **must be installed and on `PATH`** in the gateway's
+  runtime environment. The Docker image contains only the gateway.
 - Each invocation spawns a subprocess — concurrency and host resources bound throughput.
-- Timeouts return a `failed` job / MCP error after 300 s.
+- Timeouts return a `failed` job / MCP error.
 
 ## Security posture
 
@@ -95,26 +127,35 @@ Invocation shells out to the local `claude` CLI as an async subprocess with a **
   reverse proxy / ingress in production. API keys are bearer-equivalent — protect them in
   transit and at rest.
 
-## Known gaps (documented, not silently patched)
+## Design limits
 
-These are real discrepancies between the shipped config/README and the implementation. They are
-called out here rather than "fixed" so operators aren't surprised, and so a maintainer decides
-the intended behaviour:
+These are properties of the current design, not defects awaiting a fix. Plan around them:
 
-1. **Port mismatch.** `.env.example` + README use **8100**; `Dockerfile`, its `HEALTHCHECK`, and
-   `registry/capabilities.yaml` (`gateway_port`) use **8420**. Choose one explicitly when
-   launching `uvicorn`.
-2. **`RATE_LIMIT_RPM` is inert.** The limiter is hard-coded to 60/60s and does not read
-   `RATE_LIMIT_RPM`. To change the limit today you must edit `src/rate_limiter.py`.
-3. **`AUDIT_DB_PATH` is inert.** No local audit DB is written; audit is HTTP-only to the
-   event-router. The `data/` dir and `AUDIT_DB_PATH` are vestigial in the current code.
-4. **Elevated trust is not enforced on the REST invoke path.** In `src/main.py` the elevated-agent
-   branch is a stub (`pass`) — a valid API key can invoke an `elevated` agent over REST without
-   `X-Trust-Level: elevated`. The **MCP** path enforces it correctly. If you rely on the trust
-   gate, restrict access at the network layer for the REST endpoint until this is closed.
-5. **Health `version` is hard-coded** to `"1.0.0"` while the app declares `"1.1.0"`. Cosmetic,
-   but don't rely on `/health.version` for release tracking.
-6. **Jobs are in-memory and single-process.** No persistence, no cross-replica sharing.
+1. **Jobs are in-memory and single-process.** No persistence, no cross-replica sharing. A
+   restart loses in-flight and completed job records.
+2. **Rate-limit state is per-process.** Behind a load balancer the effective limit is
+   `RATE_LIMIT_RPM × replicas`. Enforce a global limit at the ingress if you need one.
+3. **`caller_id` is self-asserted.** It identifies a caller for rate-limiting and audit
+   correlation; it is not authenticated.
+4. **API keys are unscoped.** Any valid key reaches any `standard` agent, and any valid key
+   plus `X-Trust-Level: elevated` reaches any `elevated` agent. There is no per-key scoping,
+   expiry, or revocation list. Terminate finer-grained authorization in front of the gateway.
+5. **`allowed_tools` is advisory.** The gateway publishes it in discovery but does not enforce
+   it; your agent runtime must.
+6. **Job results are readable by any valid key** that knows the job id (UUID4).
+
+Changes to `RATE_LIMIT_RPM`, the registry, and the invoker configuration are all read at import
+time — **restart the gateway** for them to take effect.
+
+## Prior known gaps, now closed
+
+Earlier releases documented these; they are fixed as of the current `main`:
+
+- The port story is unified on **8100** across `.env.example`, README, Dockerfile, and registry.
+- `RATE_LIMIT_RPM` is read by the limiter.
+- `AUDIT_DB_PATH` is removed — no local DB was ever written and audit is HTTP-only.
+- Elevated trust is enforced on the REST invoke path as well as MCP.
+- `/health.version` reports the same version the app declares.
 
 ## License
 

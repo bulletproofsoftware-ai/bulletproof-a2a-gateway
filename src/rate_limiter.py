@@ -1,10 +1,22 @@
-"""In-memory sliding window rate limiter."""
+"""In-memory sliding window rate limiter.
 
+The per-caller limit is read from ``RATE_LIMIT_RPM`` (requests per minute,
+default 60). Because the window is in-process, the limit applies per gateway
+worker — run a single worker, or put a shared limiter in front, if you need a
+cluster-wide guarantee.
+"""
+
+import logging
+import os
 import time
 from collections import defaultdict
 from typing import Dict, List
 
 from fastapi import HTTPException, status
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_RATE_LIMIT_RPM = 60
 
 
 class SlidingWindowRateLimiter:
@@ -36,5 +48,27 @@ class SlidingWindowRateLimiter:
         self._requests[caller_id].append(now)
 
 
-# Singleton instance
-rate_limiter = SlidingWindowRateLimiter(max_requests=60, window_seconds=60)
+def rate_limit_rpm() -> int:
+    """Read the per-caller requests-per-minute limit from the environment."""
+    raw = os.environ.get("RATE_LIMIT_RPM", str(DEFAULT_RATE_LIMIT_RPM))
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        logger.warning(
+            "RATE_LIMIT_RPM=%r is not an integer; using %d",
+            raw,
+            DEFAULT_RATE_LIMIT_RPM,
+        )
+        return DEFAULT_RATE_LIMIT_RPM
+    if value < 1:
+        logger.warning(
+            "RATE_LIMIT_RPM=%r must be >= 1; using %d", raw, DEFAULT_RATE_LIMIT_RPM
+        )
+        return DEFAULT_RATE_LIMIT_RPM
+    return value
+
+
+# Singleton instance — limit driven by RATE_LIMIT_RPM.
+rate_limiter = SlidingWindowRateLimiter(
+    max_requests=rate_limit_rpm(), window_seconds=60
+)

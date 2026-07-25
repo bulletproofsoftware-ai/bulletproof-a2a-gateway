@@ -1,8 +1,11 @@
-"""Governance audit emission to event-router (PRD-17 REQ-A2A-009).
+"""Audit event emission.
 
-Every agent invoke + completion fires an audit event to the event-router so the
-SOC/governance plugin can see what was dispatched and by whom. Failure to emit
-NEVER blocks the invocation — audit is best-effort with a stderr log on failure.
+Every agent invoke and completion POSTs a JSON event to the configured sink so
+an external system can see what was dispatched and by whom. Any HTTP endpoint
+that accepts a JSON body works; bulletproof-event-router is one such sink.
+
+Failure to emit NEVER blocks the invocation — audit is best-effort, with a
+warning logged on failure. Set A2A_AUDIT_EVENT_ROUTER_URL to your own sink.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 EVENT_ROUTER_URL = os.environ.get(
-    "A2A_AUDIT_EVENT_ROUTER_URL", "http://host.docker.internal:8085/events"
+    "A2A_AUDIT_EVENT_ROUTER_URL", "http://localhost:8085/events"
 )
 AUDIT_TIMEOUT_S = float(os.environ.get("A2A_AUDIT_TIMEOUT_S", "1.5"))
 

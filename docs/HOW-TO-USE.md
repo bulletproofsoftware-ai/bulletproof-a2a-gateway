@@ -2,7 +2,9 @@
 
 This is the complete, real endpoint reference, taken directly from
 [`src/main.py`](../src/main.py) and [`src/adapters/mcp_bridge.py`](../src/adapters/mcp_bridge.py).
-Examples use `http://localhost:8100` (the `.env.example` port) — adjust to your run port.
+Examples run against the registry shipped in `registry/capabilities.yaml` (three example
+agents: `example-reviewer`, `example-researcher`, `example-builder`) and use
+`http://localhost:8100` (the `.env.example` port) — adjust to your run port.
 
 ## Authentication
 
@@ -32,14 +34,11 @@ curl -s http://localhost:8100/health
 {
   "status": "healthy",
   "service": "a2a-gateway",
-  "version": "1.0.0",
-  "agent_count": 15,
+  "version": "1.1.0",
+  "agent_count": 3,
   "timestamp": "2026-07-24T19:00:00.000000+00:00"
 }
 ```
-
-> The `version` field is hard-coded to `"1.0.0"` in the health handler, while the FastAPI app
-> declares `version="1.1.0"`. See the known-gap note in [ADMINISTRATOR.md](ADMINISTRATOR.md).
 
 ### `GET /api/v1/agents` — discover agents (auth)
 
@@ -49,17 +48,17 @@ curl -s http://localhost:8100/api/v1/agents -H "X-API-Key: <key>"
 
 ```json
 {
-  "count": 15,
+  "count": 3,
   "agents": [
     {
-      "agent_id": "conductor-architect",
-      "description": "Designs system architecture, component boundaries, ...",
-      "allowed_tools": ["Read", "Glob", "Grep", "Bash"],
-      "max_tokens": 32768,
-      "trust_level": "elevated",
+      "agent_id": "example-reviewer",
+      "description": "Reviews a supplied diff or file for correctness, style, and obvious defects. Read-only.",
+      "allowed_tools": ["Read", "Glob", "Grep"],
+      "max_tokens": 16384,
+      "trust_level": "standard",
       "externally_callable": true
     }
-    // ... 14 more
+    // ... example-researcher, example-builder
   ]
 }
 ```
@@ -78,7 +77,7 @@ Request body:
 | `caller_id` | string | yes | 1–256 chars — used for rate-limiting and audit |
 
 ```bash
-curl -s -X POST http://localhost:8100/api/v1/agents/conductor-qa/invoke \
+curl -s -X POST http://localhost:8100/api/v1/agents/example-reviewer/invoke \
   -H "X-API-Key: <key>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -93,12 +92,31 @@ curl -s -X POST http://localhost:8100/api/v1/agents/conductor-qa/invoke \
 
 Errors:
 - `404` — `Agent '<id>' not found. Use GET /api/v1/agents to discover available agents.`
-- `429` — `Rate limit exceeded: 60 requests per 60s` (per `caller_id`).
+- `429` — `Rate limit exceeded: 60 requests per 60s` (per `caller_id`, limit from `RATE_LIMIT_RPM`).
+- `403` — for `trust_level: elevated` agents (`example-builder`), when the caller does not send
+  `X-Trust-Level: elevated`. See "Elevated agents over REST" below.
 
-> **Elevated agents over REST.** For agents with `trust_level: elevated`, the intended contract
-> is an additional `X-Trust-Level: elevated` header. Note the REST handler currently does **not**
-> enforce this (the check is stubbed) — see the known-gap note in
-> [ADMINISTRATOR.md](ADMINISTRATOR.md). The **MCP** path *does* enforce it.
+### Elevated agents over REST
+
+`example-builder` has `trust_level: elevated`. Calling it without the trust header is rejected:
+
+```bash
+curl -s -X POST http://localhost:8100/api/v1/agents/example-builder/invoke \
+  -H "X-API-Key: <key>" -H "Content-Type: application/json" \
+  -d '{"prompt": "Implement the parser", "caller_id": "ci-pipeline-42"}'
+# -> 403 Agent 'example-builder' requires elevated trust; got 'standard'.
+#    Send X-Trust-Level: elevated.
+```
+
+Send the header to succeed:
+
+```bash
+curl -s -X POST http://localhost:8100/api/v1/agents/example-builder/invoke \
+  -H "X-API-Key: <key>" -H "X-Trust-Level: elevated" -H "Content-Type: application/json" \
+  -d '{"prompt": "Implement the parser", "caller_id": "ci-pipeline-42"}'
+```
+
+This is enforced identically on the **MCP** path (see below).
 
 ### `GET /api/v1/jobs/{job_id}` — poll a job (auth)
 
@@ -109,7 +127,7 @@ curl -s http://localhost:8100/api/v1/jobs/<job_id> -H "X-API-Key: <key>"
 ```json
 {
   "job_id": "1f0e...uuid",
-  "agent_id": "conductor-qa",
+  "agent_id": "example-reviewer",
   "caller_id": "ci-pipeline-42",
   "status": "completed",
   "result": "…agent stdout…",
@@ -128,8 +146,8 @@ message and `result` may hold partial stdout. `404` if the `job_id` is unknown.
 ### `GET /.well-known/agent.json` — A2A agent card (public)
 
 Standard A2A discovery card. No auth. Advertises the gateway, its protocol version, the
-`api_key` auth scheme (header `X-API-Key`), a 60 rpm rate limit, and one card per agent with its
-invoke endpoint.
+`api_key` auth scheme (header `X-API-Key`), the configured rate limit, and one card per agent
+with its invoke endpoint.
 
 ```bash
 curl -s http://localhost:8100/.well-known/agent.json
@@ -139,9 +157,9 @@ curl -s http://localhost:8100/.well-known/agent.json
 
 ## MCP Bridge
 
-The bridge exposes the same 15 agents as MCP tools over JSON-RPC 2.0 at **`POST /mcp`**. It uses
-the **same `X-API-Key`** authentication as REST. Unlike REST, MCP invocation is **synchronous** —
-`tools/call` waits for the agent and returns the output inline.
+The bridge exposes the same registered agents as MCP tools over JSON-RPC 2.0 at **`POST /mcp`**.
+It uses the **same `X-API-Key`** authentication as REST. Unlike REST, MCP invocation is
+**synchronous** — `tools/call` waits for the agent and returns the output inline.
 
 Supported methods: `initialize`, `tools/list`, `tools/call`.
 
@@ -184,7 +202,7 @@ curl -s -X POST http://localhost:8100/mcp \
   -d '{
         "jsonrpc":"2.0","id":3,"method":"tools/call",
         "params":{
-          "name":"conductor-research",
+          "name":"example-researcher",
           "arguments":{
             "prompt":"Compare httpx vs aiohttp for async clients",
             "caller_id":"mcp-demo"
@@ -217,19 +235,20 @@ curl -s -X POST http://localhost:8100/mcp \
 
 ### Elevated trust over MCP
 
-For `elevated` agents, the caller **must** send `X-Trust-Level: elevated`, else:
+For `elevated` agents (`example-builder`), the caller **must** send `X-Trust-Level: elevated`,
+else:
 
 ```json
 { "jsonrpc":"2.0","id":3,
   "error":{ "code":-32603,
-    "message":"agent conductor-builder requires elevated trust; got standard" } }
+    "message":"agent example-builder requires elevated trust; got standard" } }
 ```
 
 ```bash
 curl -s -X POST http://localhost:8100/mcp \
   -H "X-API-Key: <key>" -H "X-Trust-Level: elevated" -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":4,"method":"tools/call",
-       "params":{"name":"conductor-builder",
+       "params":{"name":"example-builder",
                  "arguments":{"prompt":"Implement the parser","caller_id":"mcp-demo"}}}'
 ```
 
@@ -238,10 +257,13 @@ curl -s -X POST http://localhost:8100/mcp \
 ## Audit events
 
 Every invoke (start / complete / failed / error) fires a best-effort audit event to an external
-event-router (default `http://host.docker.internal:8085/events`, override with
+HTTP sink (default `http://localhost:8085/events`, override with
 `A2A_AUDIT_EVENT_ROUTER_URL`). Audit failures are logged but **never** block or fail an
 invocation. Event payloads carry `category`, `event`, `source: "a2a-gateway"`, `actor`
-(the `caller_id`), `agent_id`, `job_id`, `trust_level`, and a `channel` of `rest` or `mcp`.
+(the `caller_id`), `agent_id`, `job_id`, `trust_level`, and a `channel` of `rest` or `mcp`. Any
+HTTP endpoint accepting a JSON body can be the sink;
+[`bulletproof-event-router`](https://github.com/bulletproofsoftware-ai/bulletproof-event-router)
+is one optional example.
 
 ## License
 

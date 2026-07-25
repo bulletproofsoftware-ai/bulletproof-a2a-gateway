@@ -1,7 +1,7 @@
 """A2A Agent Interoperability Gateway — FastAPI application.
 
-Exposes 15 conductor agents to external callers via REST API.
-PRD 17 implementation.
+Exposes the agents declared in the capabilities registry to external callers
+over REST, the A2A agent card, and an MCP bridge.
 """
 
 import logging
@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from src.agents import get_agent, list_agents
@@ -26,6 +26,8 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+SERVICE_VERSION = "1.1.0"
 
 
 # --- Job storage (in-memory) ---
@@ -142,8 +144,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="A2A Agent Interoperability Gateway",
-    description="Exposes 15 conductor agents to external callers via REST + A2A + MCP (PRD 17)",
-    version="1.1.0",
+    description=(
+        "Exposes the agents declared in the capabilities registry to external "
+        "callers via REST, the A2A agent card, and an MCP bridge."
+    ),
+    version=SERVICE_VERSION,
     lifespan=lifespan,
 )
 
@@ -159,7 +164,7 @@ async def health_check():
     return HealthResponse(
         status="healthy",
         service="a2a-gateway",
-        version="1.0.0",
+        version=SERVICE_VERSION,
         agent_count=len(list_agents()),
         timestamp=datetime.now(timezone.utc).isoformat(),
     )
@@ -184,9 +189,10 @@ async def invoke_agent_endpoint(
     agent_id: str,
     request: InvokeRequest,
     background_tasks: BackgroundTasks,
+    http_request: Request,
     api_key: str = Depends(require_api_key),
 ):
-    """Invoke a conductor agent asynchronously.
+    """Invoke an agent asynchronously.
 
     Returns a job_id that can be polled for results.
     """
@@ -201,12 +207,18 @@ async def invoke_agent_endpoint(
             detail=f"Agent '{agent_id}' not found. Use GET /api/v1/agents to discover available agents.",
         )
 
-    # Trust level check — elevated agents need X-Trust-Level: elevated header
+    # Trust level check — elevated agents require the X-Trust-Level header.
+    # Enforced identically on the MCP path (see adapters/mcp_bridge.py).
     if agent.trust_level == "elevated":
-        from fastapi import Request as _Req  # local import to avoid circular noise
-        # background_tasks parameter doesn't carry Request; pull trust header from FastAPI
-        # Note: we passed background_tasks so we don't have Request here. Instead, we re-resolve.
-        pass
+        trust_header = http_request.headers.get("X-Trust-Level", "standard")
+        if trust_header != "elevated":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"Agent '{agent_id}' requires elevated trust; "
+                    f"got '{trust_header}'. Send X-Trust-Level: elevated."
+                ),
+            )
 
     # Create job
     job_id = str(uuid.uuid4())
@@ -285,6 +297,7 @@ async def agent_card():
     No authentication required — this is a public discovery endpoint.
     """
     agents = list_agents()
+    rpm = rate_limiter.max_requests
     agent_cards = [
         {
             "id": a["agent_id"],
@@ -292,15 +305,18 @@ async def agent_card():
             "description": a["description"],
             "capabilities": a["allowed_tools"],
             "endpoint": f"/api/v1/agents/{a['agent_id']}/invoke",
-            "rate_limit": {"requests_per_minute": 60},
+            "trust_level": a["trust_level"],
+            "rate_limit": {"requests_per_minute": rpm},
         }
         for a in agents
     ]
 
     return {
-        "name": "BulletproofSoftware Agent Gateway",
-        "version": "1.0.0",
-        "description": "A2A Agent Interoperability Gateway exposing 15 conductor agents",
+        "name": "A2A Agent Interoperability Gateway",
+        "version": SERVICE_VERSION,
+        "description": (
+            f"A2A Agent Interoperability Gateway exposing {len(agents)} agent(s)"
+        ),
         "protocol_version": "0.2.0",
         "capabilities": [
             "task_execution",
@@ -311,6 +327,6 @@ async def agent_card():
             "type": "api_key",
             "header": "X-API-Key",
         },
-        "rate_limits": {"requests_per_minute": 60},
+        "rate_limits": {"requests_per_minute": rpm},
         "agents": agent_cards,
     }

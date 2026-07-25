@@ -1,7 +1,8 @@
-"""MCP bridge adapter (PRD-17 REQ-A2A-004).
+"""MCP bridge adapter.
 
-Exposes the 15 conductor agents as MCP tools so any MCP-aware client
-(Claude Code, Claude Desktop, the MCP Inspector) can invoke them.
+Exposes every agent in the capabilities registry as an MCP tool so any
+MCP-aware client (Claude Code, Claude Desktop, the MCP Inspector) can
+invoke them.
 
 The MCP protocol over HTTP wraps JSON-RPC 2.0 messages. We implement the
 minimum surface needed for tool discovery + invocation:
