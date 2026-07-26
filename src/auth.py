@@ -17,6 +17,24 @@ def _load_api_keys() -> Set[str]:
     return {k.strip() for k in raw.split(",") if k.strip()}
 
 
+def _load_elevated_api_keys() -> Set[str]:
+    """Keys permitted to invoke elevated-trust agents (comma-separated).
+
+    Trust MUST be derived from the presented credential, never from a header
+    the caller controls. ELEVATED_API_KEYS is a subset of API_KEYS; a key not
+    listed here is standard trust no matter what it claims.
+    """
+    raw = os.environ.get("ELEVATED_API_KEYS", "")
+    if not raw:
+        return set()
+    return {k.strip() for k in raw.split(",") if k.strip()}
+
+
+def is_elevated_key(api_key: str) -> bool:
+    """True if this validated key is authorised for elevated-trust agents."""
+    return api_key in _load_elevated_api_keys()
+
+
 async def require_api_key(
     api_key: str | None = Security(_api_key_header),
 ) -> str:

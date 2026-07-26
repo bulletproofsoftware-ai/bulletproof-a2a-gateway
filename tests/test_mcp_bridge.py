@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from tests.conftest import API_KEY
+from tests.conftest import API_KEY, ELEVATED_KEY
 
 AUTH = {"X-API-Key": API_KEY}
 
@@ -80,14 +80,29 @@ class TestToolsCall:
         assert "error" in r.json()
         assert "elevated" in r.json()["error"]["message"].lower()
 
-    def test_elevated_agent_allowed_with_trust_header(self, default_client):
+    def test_elevated_agent_rejected_even_with_forged_trust_header(self, default_client):
+        # A standard key cannot self-promote by asserting the header — that
+        # was the bypass this check previously had.
         r = rpc(
             default_client,
             "tools/call",
             {"name": "test-elevated", "arguments": {"prompt": "hi", "caller_id": "c3"}},
             headers={"X-Trust-Level": "elevated"},
         )
+        assert "error" in r.json()
+
+    def test_elevated_agent_allowed_for_elevated_key(self, default_client):
+        r = rpc(
+            default_client,
+            "tools/call",
+            {"name": "test-elevated", "arguments": {"prompt": "hi", "caller_id": "c3"}},
+            headers={"X-API-Key": ELEVATED_KEY},
+        )
         assert "result" in r.json()
+
+    def test_non_dict_params_is_invalid_params(self, default_client):
+        r = rpc(default_client, "tools/call", ["not", "a", "dict"])
+        assert r.json()["error"]["code"] == -32602
 
     def test_unknown_tool_is_method_not_found(self, default_client):
         r = rpc(

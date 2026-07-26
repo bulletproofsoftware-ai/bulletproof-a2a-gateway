@@ -26,7 +26,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from ..agents import get_agent, list_agents
 from ..audit import emit_audit_event
-from ..auth import require_api_key
+from ..auth import require_api_key, is_elevated_key
 from ..invoker import invoke_agent
 from ..rate_limiter import rate_limiter
 
@@ -122,6 +122,10 @@ async def mcp_endpoint(
         )
 
     if method == "tools/call":
+        # JSON-RPC allows params to be a list; .get() on one raises
+        # AttributeError and 500s instead of returning an invalid-params error.
+        if not isinstance(params, dict):
+            return _jsonrpc_error(req_id, -32602, "invalid params: expected an object")
         tool_name = params.get("name")
         arguments = params.get("arguments") or {}
         if not tool_name or not isinstance(tool_name, str):
@@ -133,15 +137,16 @@ async def mcp_endpoint(
         if not prompt or not isinstance(prompt, str):
             return _jsonrpc_error(req_id, -32602, "invalid params: 'arguments.prompt' is required")
         caller_id = arguments.get("caller_id") or "mcp-client"
-        # Trust level check
-        if agent.trust_level == "elevated":
-            trust_header = request.headers.get("X-Trust-Level", "standard")
-            if trust_header != "elevated":
-                return _jsonrpc_error(
-                    req_id,
-                    -32603,
-                    f"agent {tool_name} requires elevated trust; got {trust_header}",
-                )
+        # Trust level check — derived from the presented API key, not from a
+        # caller-supplied header. Reading X-Trust-Level let any holder of a
+        # valid key self-assert elevated trust (same bypass as the REST path).
+        if agent.trust_level == "elevated" and not is_elevated_key(api_key):
+            return _jsonrpc_error(
+                req_id,
+                -32603,
+                f"agent {tool_name} requires elevated trust; the presented "
+                "API key is not authorised for elevated-trust agents",
+            )
         # Rate limit
         try:
             rate_limiter.check(caller_id)

@@ -20,6 +20,8 @@ TEST_REGISTRY = Path(__file__).parent / "fixtures" / "capabilities.test.yaml"
 
 API_KEY = "test-key-primary"
 OTHER_KEY = "test-key-secondary"
+# Authorised for elevated-trust agents; API_KEY deliberately is not.
+ELEVATED_KEY = "test-key-elevated"
 
 
 @pytest.fixture
@@ -34,7 +36,8 @@ def app_env(monkeypatch):
     def _configure(**overrides: str):
         env = {
             "A2A_REGISTRY_PATH": str(TEST_REGISTRY),
-            "API_KEYS": f"{API_KEY},{OTHER_KEY}",
+            "API_KEYS": f"{API_KEY},{OTHER_KEY},{ELEVATED_KEY}",
+            "ELEVATED_API_KEYS": ELEVATED_KEY,
             "RATE_LIMIT_RPM": "60",
             "A2A_INVOKER_EXECUTOR": "echo",
             # Point audit at a closed port: emission must fail silently.

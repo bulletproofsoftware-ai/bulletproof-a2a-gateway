@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from src.agents import get_agent, list_agents
 from src.adapters.mcp_bridge import router as mcp_router
 from src.audit import emit_audit_event
-from src.auth import require_api_key
+from src.auth import require_api_key, is_elevated_key
 from src.invoker import invoke_agent
 from src.rate_limiter import rate_limiter
 
@@ -102,7 +102,16 @@ async def _run_agent_job(
         return
 
     job.status = JobStatus.RUNNING
-    result = await invoke_agent(agent_id, prompt, context)
+    try:
+        result = await invoke_agent(agent_id, prompt, context)
+    except Exception as exc:  # noqa: BLE001
+        # Without this the job stays RUNNING forever on any unexpected error,
+        # and a poller waiting on it never learns the work failed.
+        logger.exception("Job %s failed with an unhandled error", job_id)
+        job.status = JobStatus.FAILED
+        job.error = f"internal error: {exc}"
+        job.completed_at = datetime.now(timezone.utc).isoformat()
+        return
 
     if result.success:
         job.status = JobStatus.COMPLETED
@@ -207,18 +216,23 @@ async def invoke_agent_endpoint(
             detail=f"Agent '{agent_id}' not found. Use GET /api/v1/agents to discover available agents.",
         )
 
-    # Trust level check — elevated agents require the X-Trust-Level header.
-    # Enforced identically on the MCP path (see adapters/mcp_bridge.py).
-    if agent.trust_level == "elevated":
-        trust_header = http_request.headers.get("X-Trust-Level", "standard")
-        if trust_header != "elevated":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=(
-                    f"Agent '{agent_id}' requires elevated trust; "
-                    f"got '{trust_header}'. Send X-Trust-Level: elevated."
-                ),
-            )
+    # Trust level check — elevated agents require an API key that is itself
+    # authorised for elevated trust.
+    #
+    # This previously read the X-Trust-Level request header, which the caller
+    # supplies: anyone holding any valid API key could send
+    # "X-Trust-Level: elevated" and invoke an elevated agent. Trust is now
+    # derived from the presented credential (ELEVATED_API_KEYS), which the
+    # caller cannot influence. Enforced identically on the MCP path
+    # (see adapters/mcp_bridge.py).
+    if agent.trust_level == "elevated" and not is_elevated_key(api_key):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"Agent '{agent_id}' requires elevated trust; the presented "
+                "API key is not authorised for elevated-trust agents."
+            ),
+        )
 
     # Create job
     job_id = str(uuid.uuid4())

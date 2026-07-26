@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.conftest import API_KEY
+from tests.conftest import ELEVATED_KEY, API_KEY
 
 AUTHENTICATED_GETS = ["/api/v1/agents", "/api/v1/jobs/does-not-exist"]
 
@@ -71,11 +71,17 @@ class TestTrustLevel:
         assert r.status_code == 403
         assert "elevated" in r.json()["detail"].lower()
 
-    def test_elevated_agent_rejected_with_standard_header(self, default_client):
-        assert _invoke(default_client, "test-elevated", trust="standard").status_code == 403
+    def test_elevated_agent_rejected_for_standard_key(self, default_client):
+        # A standard key cannot reach an elevated agent...
+        assert _invoke(default_client, "test-elevated").status_code == 403
 
-    def test_elevated_agent_allowed_with_elevated_header(self, default_client):
-        assert _invoke(default_client, "test-elevated", trust="elevated").status_code == 202
+    def test_elevated_agent_rejected_even_with_forged_trust_header(self, default_client):
+        # ...and cannot self-promote by asserting the header, which is the
+        # bypass this check previously had.
+        assert _invoke(default_client, "test-elevated", trust="elevated").status_code == 403
+
+    def test_elevated_agent_allowed_for_elevated_key(self, default_client):
+        assert _invoke(default_client, "test-elevated", key=ELEVATED_KEY).status_code == 202
 
     def test_unknown_agent_is_404(self, default_client):
         assert _invoke(default_client, "no-such-agent").status_code == 404
