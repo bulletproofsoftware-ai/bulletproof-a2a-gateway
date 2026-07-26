@@ -177,7 +177,11 @@ async def mcp_endpoint(
                 trust_level=agent.trust_level,
                 extra={"channel": "mcp", "error": str(exc)},
             )
-            return _jsonrpc_error(req_id, -32603, f"agent invocation failed: {exc}")
+            # The exception text can carry adapter internals and upstream
+            # errors; keep it in the audit record above, not in the JSON-RPC
+            # response (CodeQL py/stack-trace-exposure).
+            logger.warning("agent invocation failed for job %s: %s", job_id, exc)
+            return _jsonrpc_error(req_id, -32603, "agent invocation failed")
 
         await emit_audit_event(
             category="agent.dispatch",

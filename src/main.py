@@ -27,6 +27,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+def _lg(value: object, limit: int = 200) -> str:
+    """Render an untrusted value safe for a single log line.
+
+    agent_id and caller_id come from the request body. CR/LF in either forges
+    additional log entries (CodeQL py/log-injection).
+    """
+    text = str(value)
+    text = text.replace("\r", "\\r").replace("\n", "\\n")
+    text = "".join(ch if ch.isprintable() else "\\x%02x" % ord(ch) for ch in text)
+    return text[:limit] + ("…" if len(text) > limit else "")
+
 SERVICE_VERSION = "1.1.0"
 
 
@@ -267,7 +279,7 @@ async def invoke_agent_endpoint(
         agent.trust_level,
     )
 
-    logger.info("Job %s created for agent %s by caller %s", job_id, agent_id, request.caller_id)
+    logger.info("Job %s created for agent %s by caller %s", job_id, _lg(agent_id), _lg(request.caller_id))
 
     return InvokeResponse(job_id=job_id, status=job.status.value)
 
